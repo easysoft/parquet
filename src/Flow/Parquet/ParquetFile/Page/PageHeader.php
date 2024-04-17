@@ -1,0 +1,153 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Flow\Parquet\ParquetFile\Page;
+
+use Flow\Parquet\ParquetFile\Encodings;
+use Flow\Parquet\ParquetFile\Page\Header\{DataPageHeader, DataPageHeaderV2, DictionaryPageHeader, Type};
+
+/**
+ * @psalm-suppress RedundantConditionGivenDocblockType
+ */
+final class PageHeader
+{
+    /**
+     * @readonly
+     * @var \Flow\Parquet\ParquetFile\Page\Header\Type
+     */
+    private $type;
+    /**
+     * @readonly
+     * @var int
+     */
+    private $compressedPageSize;
+    /**
+     * @readonly
+     * @var int
+     */
+    private $uncompressedPageSize;
+    /**
+     * @readonly
+     * @var \Flow\Parquet\ParquetFile\Page\Header\DataPageHeader|null
+     */
+    private $dataPageHeader;
+    /**
+     * @readonly
+     * @var \Flow\Parquet\ParquetFile\Page\Header\DataPageHeaderV2|null
+     */
+    private $dataPageHeaderV2;
+    /**
+     * @readonly
+     * @var \Flow\Parquet\ParquetFile\Page\Header\DictionaryPageHeader|null
+     */
+    private $dictionaryPageHeader;
+    /**
+     * @param \Flow\Parquet\ParquetFile\Page\Header\Type::* $type
+     */
+    public function __construct($type, int $compressedPageSize, int $uncompressedPageSize, ?DataPageHeader $dataPageHeader, ?DataPageHeaderV2 $dataPageHeaderV2, ?DictionaryPageHeader $dictionaryPageHeader)
+    {
+        $this->type = $type;
+        $this->compressedPageSize = $compressedPageSize;
+        $this->uncompressedPageSize = $uncompressedPageSize;
+        $this->dataPageHeader = $dataPageHeader;
+        $this->dataPageHeaderV2 = $dataPageHeaderV2;
+        $this->dictionaryPageHeader = $dictionaryPageHeader;
+    }
+
+    public static function fromThrift(\Flow\Parquet\Thrift\PageHeader $thrift) : self
+    {
+        return new self(
+            Type::from($thrift->type),
+            $thrift->compressed_page_size,
+            $thrift->uncompressed_page_size,
+            $thrift->data_page_header !== null ? DataPageHeader::fromThrift($thrift->data_page_header) : null,
+            $thrift->data_page_header_v2 !== null ? DataPageHeaderV2::fromThrift($thrift->data_page_header_v2) : null,
+            $thrift->dictionary_page_header !== null ? DictionaryPageHeader::fromThrift($thrift->dictionary_page_header) : null
+        );
+    }
+
+    public function compressedPageSize() : int
+    {
+        return $this->compressedPageSize;
+    }
+
+    public function dataPageHeader() : ?DataPageHeader
+    {
+        return $this->dataPageHeader;
+    }
+
+    public function dataPageHeaderV2() : ?DataPageHeaderV2
+    {
+        return $this->dataPageHeaderV2;
+    }
+
+    public function dataValuesCount() : ?int
+    {
+        if ($this->dataPageHeader !== null) {
+            return $this->dataPageHeader->valuesCount();
+        }
+
+        if ($this->dataPageHeaderV2 !== null) {
+            return $this->dataPageHeaderV2->valuesCount();
+        }
+
+        return null;
+    }
+
+    public function dictionaryPageHeader() : ?DictionaryPageHeader
+    {
+        return $this->dictionaryPageHeader;
+    }
+
+    public function dictionaryValuesCount() : ?int
+    {
+        if ($this->dictionaryPageHeader !== null) {
+            return $this->dictionaryPageHeader->valuesCount();
+        }
+
+        return null;
+    }
+
+    public function encoding() : Encodings
+    {
+        if ($this->dictionaryPageHeader) {
+            return $this->dictionaryPageHeader->encoding();
+        }
+
+        if ($this->dataPageHeaderV2) {
+            return $this->dataPageHeaderV2->encoding();
+        }
+
+        /**
+         * @psalm-suppress PossiblyNullReference
+         *
+         * @phpstan-ignore-next-line
+         */
+        return $this->dataPageHeader->encoding();
+    }
+
+    public function toThrift() : \Flow\Parquet\Thrift\PageHeader
+    {
+        return new \Flow\Parquet\Thrift\PageHeader([
+            'type' => $this->type->value,
+            'compressed_page_size' => $this->compressedPageSize,
+            'uncompressed_page_size' => $this->uncompressedPageSize,
+            'crc' => null,
+            'data_page_header' => ($nullsafeVariable1 = $this->dataPageHeader) ? $nullsafeVariable1->toThrift() : null,
+            'data_page_header_v2' => ($nullsafeVariable2 = $this->dataPageHeaderV2) ? $nullsafeVariable2->toThrift() : null,
+            'dictionary_page_header' => ($nullsafeVariable3 = $this->dictionaryPageHeader) ? $nullsafeVariable3->toThrift() : null,
+            'index_page_header' => null,
+        ]);
+    }
+
+    public function type() : Type
+    {
+        return $this->type;
+    }
+
+    public function uncompressedPageSize() : int
+    {
+        return $this->uncompressedPageSize;
+    }
+}

@@ -1,0 +1,55 @@
+{
+    "name": "easysoft/parquet",
+    "type": "library",
+    "description": "PHP ETL - library for reading and writing Parquet files",
+    "keywords": [
+        "etl",
+        "extract",
+        "transform",
+        "load",
+        "filter",
+        "parquet"
+    ],
+    "require": {
+        "php": ">=7.2",
+        "ext-bcmath": "*",
+        "ext-zlib": "*",
+        "composer-runtime-api": "^2.1",
+        "packaged/thrift": "^0.15.0"
+    },
+    "require-dev": {
+        "rector/rector": "^1.0"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
+    },
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Flow\\": [
+                "src/Flow"
+            ]
+        },
+        "files": [
+            "src/Flow/Parquet/functions.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Flow\\": "tests/Flow"
+        }
+    },
+    "scripts": {
+        "rector": [
+            "Composer\\Config::disableProcessTimeout",
+            "rector process --no-diffs --no-progress-bar"
+        ],
+        "rector-nocache": [
+            "Composer\\Config::disableProcessTimeout",
+            "rector process --no-diffs --no-progress-bar --clear-cache"
+        ]
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
